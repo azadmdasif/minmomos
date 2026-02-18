@@ -37,34 +37,38 @@
           margin: 0; 
         }
         
-        /* Force display and visibility for print engine */
-        html, body {
+        /* 1. Global Reset: Everything must be visible and static */
+        html, body, #root, main, div, section {
           height: auto !important;
           overflow: visible !important;
+          position: static !important;
           background: #fff !important;
           margin: 0 !important;
           padding: 0 !important;
+          display: block !important;
+          box-shadow: none !important;
+          max-height: none !important;
         }
 
-        /* Hide all UI elements including sidebars and navs */
+        /* 2. Clear all UI clutter */
         #root > *:not(main),
         aside, nav, header, button, input, .no-print {
           display: none !important;
         }
 
-        /* Reset all potential hidden parents */
+        /* 3. Hide everything by default using visibility */
         body * {
           visibility: hidden;
         }
 
-        /* Target the receipt specifically */
+        /* 4. Target the receipt specifically and make it the star */
         #printable-receipt, 
         #printable-receipt * {
           visibility: visible !important;
           display: block !important;
         }
 
-        /* Un-nest the receipt layout for the printer */
+        /* 5. Force the receipt to the top-left of the page */
         #printable-receipt {
           position: absolute !important;
           top: 0 !important;
@@ -75,17 +79,12 @@
           background: white !important;
           color: black !important;
           z-index: 99999 !important;
-          box-shadow: none !important;
         }
 
-        /* Strip modal/dialog styles that might interfere */
-        .fixed, .absolute, [role="dialog"], [aria-modal="true"] {
-          position: static !important;
-          display: block !important;
-          background: none !important;
+        /* 6. Special handling for modal wrappers to prevent them from clipping */
+        [role="dialog"], .fixed, .absolute {
+          background: transparent !important;
           backdrop-filter: none !important;
-          padding: 0 !important;
-          margin: 0 !important;
           visibility: visible !important;
         }
       }
