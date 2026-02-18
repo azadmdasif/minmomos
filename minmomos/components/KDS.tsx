@@ -33,7 +33,6 @@ const KDS: React.FC = () => {
       .subscribe();
 
     // 2. Polling Fallback (Every 10 seconds)
-    // Professional QSR safety measure for when WebSockets drop
     pollIntervalRef.current = window.setInterval(() => {
       fetchPending();
     }, 10000);
@@ -50,7 +49,7 @@ const KDS: React.FC = () => {
     else if (currentStatus === 'READY') nextStatus = 'SERVED';
     
     await updateOrderStatus(orderId, nextStatus as any);
-    fetchPending(); // Immediate local refresh
+    fetchPending(); 
   };
 
   return (
@@ -94,17 +93,24 @@ const KDS: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex-1 p-6 space-y-5 overflow-y-auto no-scrollbar bg-white">
-                {order.order_items.map((item: any) => (
-                  <div key={item.id} className="flex justify-between items-start group border-b border-stone-50 pb-3 last:border-0">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <span className="text-peak-amber font-black text-xl">x{item.quantity}</span>
-                        <span className="font-black text-sm text-slate-800 leading-tight uppercase tracking-tight">{item.name}</span>
+              <div className="flex-1 p-6 space-y-4 overflow-y-auto no-scrollbar bg-white">
+                {/* Render ALL items in the order, sorted to put Momos first and sides/addons second */}
+                {[...(order.order_items || [])].sort((a,b) => a.name.includes('Momo') ? -1 : 1).map((item: any) => {
+                  const isSide = item.name.toLowerCase().includes('fries') || item.name.toLowerCase().includes('mayo');
+                  return (
+                    <div key={item.id} className={`flex justify-between items-start pb-3 border-b border-stone-50 last:border-0 ${isSide ? 'bg-brand-brown/5 rounded-xl p-3' : ''}`}>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <span className={`font-black text-xl ${isSide ? 'text-brand-red' : 'text-peak-amber'}`}>x{item.quantity}</span>
+                          <span className={`font-black text-sm leading-tight uppercase tracking-tight ${isSide ? 'text-brand-brown italic' : 'text-slate-800'}`}>
+                            {item.name}
+                            {isSide && <span className="block text-[8px] font-black text-brand-red/60 tracking-widest mt-0.5">EXTRA ITEM</span>}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="p-5 bg-slate-50 border-t border-slate-100">

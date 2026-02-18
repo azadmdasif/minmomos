@@ -1,5 +1,5 @@
 
-export type PreparationType = 'steamed' | 'fried' | 'normal' | 'peri-peri' | 'chilli';
+export type PreparationType = 'steamed' | 'fried' | 'normal' | 'peri-peri' | 'pan-fried';
 export type Size = 'small' | 'medium' | 'large';
 export type PaymentMethod = 'Cash' | 'UPI' | 'Card';
 export type Category = 'momo' | 'side' | 'drink' | 'combo';

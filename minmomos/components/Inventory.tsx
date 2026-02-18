@@ -60,6 +60,7 @@ const Inventory: React.FC<InventoryProps> = ({ user }) => {
   const [newItemName, setNewItemName] = useState('');
   const [newItemUnit, setNewItemUnit] = useState('pcs');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   const fetchData = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
@@ -119,6 +120,19 @@ const Inventory: React.FC<InventoryProps> = ({ user }) => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
   }, [fetchData]);
+
+  const handleInitializeStock = async () => {
+    setIsSeeding(true);
+    try {
+      await seedStandardInventory();
+      await fetchData();
+      alert("SUCCESS: Standard raw materials have been pre-filled!");
+    } catch (e: any) {
+      alert("Seeding failed: " + e.message);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const handlePresetChange = (preset: DatePreset) => {
     setDatePreset(preset);
@@ -303,28 +317,47 @@ NOTIFY pgrst, 'reload schema';`}
           {isAdmin && (
             <section className="mb-12 animate-in fade-in duration-500">
               <h3 className="text-2xl font-black text-brand-brown underline decoration-brand-yellow decoration-4 underline-offset-8 uppercase tracking-tighter italic mb-8">Central Inventory: {materialCategory}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {centralStock.filter(i => i.category === materialCategory).map(item => (
-                  <div key={item.id} className={`bg-white p-8 rounded-[2.5rem] shadow-sm border-2 border-brand-stone group transition-all ${item.is_finished ? 'bg-red-50 border-brand-red/50' : 'hover:border-brand-brown shadow-lg'}`}>
-                    <div className="flex justify-between items-start mb-6">
-                      <div>
-                        <h4 className="text-lg font-black text-brand-brown">{item.name}</h4>
-                        <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${item.is_finished ? 'text-brand-red' : 'text-brand-brown/40'}`}>HUB: {item.current_stock.toFixed(2)} {item.unit}</p>
+              
+              {centralStock.length === 0 ? (
+                <div className="bg-white rounded-[3rem] p-16 text-center border-4 border-dashed border-brand-stone">
+                   <div className="text-6xl mb-6">📦</div>
+                   <h4 className="text-2xl font-black text-brand-brown uppercase italic mb-4">The Hub is Empty</h4>
+                   <p className="text-brand-brown/40 font-bold uppercase tracking-widest text-xs mb-8">You haven't added any base materials yet. Would you like to pre-fill the stock with standard Momo types and supplies?</p>
+                   <button 
+                    onClick={handleInitializeStock}
+                    disabled={isSeeding}
+                    className="bg-brand-brown text-brand-yellow px-12 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                   >
+                     {isSeeding ? 'Pre-filling...' : 'Initialize Hub Stock'}
+                   </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {centralStock.filter(i => i.category === materialCategory).map(item => (
+                    <div key={item.id} className={`bg-white p-8 rounded-[2.5rem] shadow-sm border-2 border-brand-stone group transition-all ${item.is_finished ? 'bg-red-50 border-brand-red/50' : 'hover:border-brand-brown shadow-lg'}`}>
+                      <div className="flex justify-between items-start mb-6">
+                        <div>
+                          <h4 className="text-lg font-black text-brand-brown">{item.name}</h4>
+                          <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${item.is_finished ? 'text-brand-red' : 'text-brand-brown/40'}`}>HUB: {item.current_stock.toFixed(2)} {item.unit}</p>
+                        </div>
+                        <button onClick={() => { setSelectedItem(item); setIsRestockModalOpen(true); }} className="p-3 bg-brand-stone/30 rounded-xl hover:bg-brand-yellow transition-colors group-hover:bg-brand-yellow shadow-sm">
+                          <svg className="w-5 h-5 text-brand-brown" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
+                        </button>
                       </div>
-                      <button onClick={() => { setSelectedItem(item); setIsRestockModalOpen(true); }} className="p-3 bg-brand-stone/30 rounded-xl hover:bg-brand-yellow transition-colors group-hover:bg-brand-yellow shadow-sm">
-                        <svg className="w-5 h-5 text-brand-brown" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
-                      </button>
+                      <div className="grid grid-cols-1 gap-3">
+                        {materialCategory !== 'INGREDIENT' ? (
+                          <button onClick={() => { setSelectedItem(item); setIsAllocateModalOpen(true); }} className="w-full py-4 bg-brand-brown text-brand-yellow rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">Dispatch to Store</button>
+                        ) : (
+                          <button onClick={() => { markCentralFinished(item.id, !item.is_finished); fetchData(); }} className={`full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg ${item.is_finished ? 'bg-brand-brown text-brand-yellow' : 'bg-brand-red text-white'}`}>{item.is_finished ? 'Receive Hub Stock' : 'Mark as Used Up'}</button>
+                        )}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-3">
-                      {materialCategory !== 'INGREDIENT' ? (
-                        <button onClick={() => { setSelectedItem(item); setIsAllocateModalOpen(true); }} className="w-full py-4 bg-brand-brown text-brand-yellow rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">Dispatch to Store</button>
-                      ) : (
-                        <button onClick={() => { markCentralFinished(item.id, !item.is_finished); fetchData(); }} className={`full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg ${item.is_finished ? 'bg-brand-brown text-brand-yellow' : 'bg-brand-red text-white'}`}>{item.is_finished ? 'Receive Hub Stock' : 'Mark as Used Up'}</button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                  {centralStock.filter(i => i.category === materialCategory).length === 0 && (
+                    <div className="lg:col-span-4 p-12 text-center text-brand-brown/20 uppercase font-black text-[10px] tracking-widest">No materials found in this category</div>
+                  )}
+                </div>
+              )}
             </section>
           )}
 
@@ -406,7 +439,7 @@ NOTIFY pgrst, 'reload schema';`}
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:underline" onClick={() => { setSortBy('date'); setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc'); }}>Date & Time {sortBy === 'date' && (sortOrder === 'desc' ? '▼' : '▲')}</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest">Item Name</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:underline text-center" onClick={() => { setSortBy('quantity'); setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc'); }}>Quantity {sortBy === 'quantity' && (sortOrder === 'desc' ? '▼' : '▲')}</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest">{ledgerType === 'BUYING' ? 'Vendor' : 'Store Station'}</th>
+                  <th className="px-8 py-6 text-[10px) font-black uppercase tracking-widest">{ledgerType === 'BUYING' ? 'Vendor' : 'Store Station'}</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-right cursor-pointer hover:underline" onClick={() => { setSortBy('cost'); setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc'); }}>{ledgerType === 'BUYING' ? 'Total Cost' : 'Action'} {sortBy === 'cost' && (sortOrder === 'desc' ? '▼' : '▲')}</th>
                 </tr>
               </thead>
