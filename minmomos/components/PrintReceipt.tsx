@@ -31,25 +31,27 @@ const PrintReceipt: React.FC<PrintReceiptProps> = ({
   const styles: { [key: string]: React.CSSProperties } = {
     container: {
       fontFamily: "'Courier New', Courier, monospace",
-      color: '#000',
-      backgroundColor: '#fff',
+      color: '#000000',
+      backgroundColor: '#ffffff',
       padding: '4mm',
       fontSize: '10pt',
-      lineHeight: '1.2'
+      lineHeight: '1.2',
+      width: '100%',
+      boxSizing: 'border-box'
     },
     center: { textAlign: 'center' },
     brand: { fontWeight: 'bold', fontSize: '18pt', letterSpacing: '-1px' },
     tagline: { fontSize: '8pt', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '-4px' },
-    divider: { borderTop: '1px dashed #000', margin: '8px 0' },
+    divider: { borderTop: '1px dashed #000000', margin: '8px 0' },
     table: { width: '100%', fontSize: '9pt', borderCollapse: 'collapse' },
-    th: { textAlign: 'left', fontWeight: 'bold', paddingBottom: '4px', borderBottom: '1px solid #000' },
-    total: { display: 'flex', justifySelf: 'flex-end', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14pt', marginTop: '10px' },
+    th: { textAlign: 'left', fontWeight: 'bold', paddingBottom: '4px', borderBottom: '1px solid #000000' },
+    total: { display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14pt', marginTop: '10px' },
     footer: { marginTop: '15px', fontSize: '8pt', textAlign: 'center' },
     metaRow: { display: 'flex', justifyContent: 'space-between', fontSize: '9pt' }
   };
 
   return (
-    <div style={styles.container} id="printable-receipt">
+    <div style={styles.container} id="printable-receipt" className="print-receipt-wrapper">
       <div style={styles.center}>
         <div style={styles.brand}>minmomos</div>
         <div style={styles.tagline}>the ultimate momo station</div>
@@ -86,9 +88,9 @@ const PrintReceipt: React.FC<PrintReceiptProps> = ({
         <tbody>
           {orderItems.map((item) => (
             <tr key={item.id}>
-              <td style={{padding: '4px 0', verticalAlign: 'top'}}>{item.name}</td>
-              <td style={{padding: '4px 0', textAlign: 'center', verticalAlign: 'top'}}>{item.quantity}</td>
-              <td style={{padding: '4px 0', textAlign: 'right', verticalAlign: 'top'}}>{(item.price * item.quantity).toFixed(0)}</td>
+              <td style={{padding: '4px 0', verticalAlign: 'top', color: '#000000'}}>{item.name}</td>
+              <td style={{padding: '4px 0', textAlign: 'center', verticalAlign: 'top', color: '#000000'}}>{item.quantity}</td>
+              <td style={{padding: '4px 0', textAlign: 'right', verticalAlign: 'top', color: '#000000'}}>{(item.price * item.quantity).toFixed(0)}</td>
             </tr>
           ))}
         </tbody>
