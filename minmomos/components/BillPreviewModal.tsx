@@ -56,7 +56,7 @@ const BillPreviewModal: React.FC<BillPreviewModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-brand-brown/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 print:hidden"
+      className="fixed inset-0 bg-brand-brown/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
       onClick={onClose}
     >
       <div 
