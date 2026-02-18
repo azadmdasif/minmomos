@@ -36,26 +36,60 @@
           size: 58mm auto; 
           margin: 0; 
         }
+        
+        /* Force display and visibility for print engine */
         html, body {
-          height: auto;
+          height: auto !important;
+          overflow: visible !important;
           background: #fff !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
-        body * { 
-          visibility: hidden; 
+
+        /* Hide all UI elements including sidebars and navs */
+        #root > *:not(main),
+        aside, nav, header, button, input, .no-print {
+          display: none !important;
         }
-        #printable-receipt, #printable-receipt * { 
-          visibility: visible; 
+
+        /* Reset all potential hidden parents */
+        body * {
+          visibility: hidden;
         }
-        #printable-receipt { 
-          position: absolute; 
-          left: 0; 
-          top: 0; 
-          width: 58mm; 
-          margin: 0;
-          padding: 2mm;
+
+        /* Target the receipt specifically */
+        #printable-receipt, 
+        #printable-receipt * {
+          visibility: visible !important;
           display: block !important;
         }
+
+        /* Un-nest the receipt layout for the printer */
+        #printable-receipt {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 58mm !important;
+          margin: 0 !important;
+          padding: 2mm !important;
+          background: white !important;
+          color: black !important;
+          z-index: 99999 !important;
+          box-shadow: none !important;
+        }
+
+        /* Strip modal/dialog styles that might interfere */
+        .fixed, .absolute, [role="dialog"], [aria-modal="true"] {
+          position: static !important;
+          display: block !important;
+          background: none !important;
+          backdrop-filter: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          visibility: visible !important;
+        }
       }
+
       .no-scrollbar::-webkit-scrollbar { display: none; }
       body { background-color: #FDFBF5; color: #4A2C2A; }
     </style>
