@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { MenuItem, OrderItem, PreparationType, Size } from '../types';
 
@@ -6,6 +7,10 @@ interface VariantSelectionModalProps {
   onClose: () => void;
   onAddItem: (items: OrderItem[]) => void;
 }
+
+const formatPrepName = (prep: string) => {
+  return prep.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
 
 const VariantSelectionModal: React.FC<VariantSelectionModalProps> = ({ item, onClose, onAddItem }) => {
   const [selectedPrep, setSelectedPrep] = useState<PreparationType>('steamed');
@@ -19,20 +24,40 @@ const VariantSelectionModal: React.FC<VariantSelectionModalProps> = ({ item, onC
     const preps: PreparationType[] = [];
     const sizes: Size[] = [];
 
+    const PREP_ORDER: PreparationType[] = ['steamed', 'fried', 'pan-fried', 'peri-peri', 'normal'];
+    const SIZE_ORDER: Size[] = ['small', 'medium', 'large'];
+
     for (const prep in item.preparations) {
-      if (item.preparations[prep as PreparationType]!.small !== -1) {
-        preps.push(prep as PreparationType);
-        for (const size in item.preparations[prep as PreparationType]) {
-          sizes.push(size as Size);
-          prices.add(item.preparations[prep as PreparationType]![size as Size]);
+      const prepKey = prep as PreparationType;
+      const prepData = item.preparations[prepKey];
+      
+      if (prepData) {
+        let hasAnyValidSize = false;
+        for (const size in prepData) {
+          const sizeKey = size as Size;
+          const price = prepData[sizeKey];
+          if (price !== undefined && price !== -1) {
+            sizes.push(sizeKey);
+            prices.add(price);
+            hasAnyValidSize = true;
+          }
+        }
+        if (hasAnyValidSize) {
+          preps.push(prepKey);
         }
       }
     }
     
     return {
       isSingleVariant: prices.size === 1,
-      availablePreps: [...new Set(preps)],
-      availableSizes: [...new Set(sizes)],
+      availablePreps: [...new Set(preps)].sort((a, b) => {
+        const indexA = PREP_ORDER.indexOf(a);
+        const indexB = PREP_ORDER.indexOf(b);
+        return (indexA === -1 ? 99 : indexA) - (indexB === -1 ? 99 : indexB);
+      }),
+      availableSizes: [...new Set(sizes)].sort((a, b) => {
+        return SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b);
+      }),
     };
   }, [item]);
 
@@ -40,8 +65,13 @@ const VariantSelectionModal: React.FC<VariantSelectionModalProps> = ({ item, onC
   // Reset state when a new item is selected
   useEffect(() => {
     if (item) {
-      setSelectedPrep(availablePreps.length > 0 ? availablePreps[0] : 'steamed');
-      setSelectedSize(availableSizes.length > 0 ? availableSizes[0] : 'medium');
+      if (availablePreps.length > 0) {
+        setSelectedPrep(availablePreps[0]);
+      }
+      if (availableSizes.length > 0) {
+        // Try to default to medium if available, otherwise first available
+        setSelectedSize(availableSizes.includes('medium') ? 'medium' : availableSizes[0]);
+      }
       setQuantity(1);
     }
   }, [item, availablePreps, availableSizes]);
@@ -66,7 +96,7 @@ const VariantSelectionModal: React.FC<VariantSelectionModalProps> = ({ item, onC
         const sizeText = selectedSize.charAt(0).toUpperCase() + selectedSize.slice(1);
         // Only add preparation to the name if there's more than one option
         if (availablePreps.length > 1) {
-            const prepText = selectedPrep.charAt(0).toUpperCase() + selectedPrep.slice(1);
+            const prepText = formatPrepName(selectedPrep);
             name = `${prepText} ${item.name} (${sizeText})`;
         } else {
             // Don't add "Normal" to the name for items like Tandoori
@@ -123,7 +153,7 @@ const VariantSelectionModal: React.FC<VariantSelectionModalProps> = ({ item, onC
                         onClick={() => setSelectedPrep(prep)}
                         className={`flex-1 py-2 rounded-lg transition-colors font-semibold ${selectedPrep === prep ? 'bg-brand-red text-white border border-brand-red' : 'bg-white text-brand-brown border border-brand-brown/30 hover:bg-brand-brown/5'}`}
                       >
-                        {prep.charAt(0).toUpperCase() + prep.slice(1)}
+                        {formatPrepName(prep)}
                       </button>
                     ))}
                   </div>

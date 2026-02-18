@@ -8,6 +8,7 @@ import VariantSelectionModal from './VariantSelectionModal';
 import BillPreviewModal from './BillPreviewModal';
 import { saveOrder, peekNextBillNumber, fetchMenuItems } from '../utils/storage';
 import { supabase } from '../utils/supabase';
+import { printerService } from '../utils/bluetoothPrinter';
 
 const CATEGORIES = [
   { id: 'momo', label: 'Steam & Fried', icon: '♨️' },
@@ -27,10 +28,10 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
   const [orderType, setOrderType] = useState<OrderType>('TAKEAWAY');
   const [selectedTable, setSelectedTable] = useState<DiningTable | null>(null);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
-  const [dbTables, setDbTables] = useState<DiningTable[]>([]);
+  const [dbTables, setDbTables] = useState<any[]>([]);
   const [customerPhone, setCustomerPhone] = useState('');
-
-  const filteredItems = Array.isArray(menuItems) ? menuItems.filter(item => item.category === activeCategory) : [];
+  const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
+  const [isPrinterConnected, setIsPrinterConnected] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -43,10 +44,17 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
         setMenuItems(mResponse.data);
       }
       
-      if (t) setDbTables(t as DiningTable[]);
+      if (t) setDbTables(t);
     };
     loadData();
+    setIsPrinterConnected(printerService.isConnected());
   }, [isTableModalOpen]);
+
+  const handleConnectPrinter = async () => {
+    const connected = await printerService.connect();
+    setIsPrinterConnected(connected);
+    if (connected) alert("Printer Connected Successfully!");
+  };
 
   const handleAddItem = useCallback((itemsToAdd: OrderItem[]) => {
     setOrder((prev) => {
@@ -74,12 +82,14 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
     setIsPreviewing(true);
   };
 
-  const handleConfirmOrder = async (method: PaymentMethod) => {
+  const handleConfirmOrder = async (method: PaymentMethod, useBluetooth: boolean = false) => {
     if (isSaving) return;
     setIsSaving(true);
     
     try {
       const total = order.reduce((acc, i) => acc + i.price * i.quantity, 0);
+      const nextBillNum = pendingBillNumber || await peekNextBillNumber();
+      
       const savedNum = await saveOrder(
         order, 
         total, 
@@ -91,13 +101,26 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
       );
       
       if (savedNum) {
+        if (useBluetooth && printerService.isConnected()) {
+          await printerService.printReceipt({
+            orderItems: order,
+            billNumber: savedNum,
+            paymentMethod: method,
+            branchName,
+            orderType
+          });
+        } else if (!useBluetooth) {
+          setTimeout(() => window.print(), 100);
+        }
+
         setOrder([]);
         setSelectedTable(null);
         setCustomerPhone('');
         setIsPreviewing(false);
-        setTimeout(() => window.print(), 100);
+        setIsMobileCartOpen(false);
       }
     } catch (err) {
+      console.error(err);
       alert("An error occurred while finalizing the order.");
     } finally {
       setIsSaving(false);
@@ -111,45 +134,54 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
     }
   };
 
+  const filteredItems = menuItems.filter(item => item.category === activeCategory);
+
   return (
-    <div className="flex h-full bg-brand-cream">
+    <div className="flex flex-col lg:flex-row h-full bg-brand-cream pb-20 lg:pb-0">
       {/* Category Picker */}
-      <div className="w-24 lg:w-32 bg-white border-r border-stone-200 flex flex-col p-3 gap-3 shadow-sm z-10">
-        <div className="text-[10px] font-black uppercase text-stone-400 tracking-widest text-center mb-2">Menu</div>
+      <div className="w-full lg:w-32 bg-white border-b lg:border-r border-stone-200 flex lg:flex-col p-3 gap-3 shadow-sm z-10 overflow-x-auto lg:overflow-visible no-scrollbar">
+        <div className="hidden lg:block text-[10px] font-black uppercase text-stone-400 tracking-widest text-center mb-2">Menu</div>
         {CATEGORIES.map(cat => (
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
-            className={`flex flex-col items-center justify-center aspect-square p-2 rounded-2xl transition-all duration-300 border-2 ${
+            className={`flex flex-col items-center justify-center min-w-[80px] lg:min-w-0 aspect-square p-2 rounded-2xl transition-all duration-300 border-2 shrink-0 ${
               activeCategory === cat.id ? 'bg-brand-yellow border-brand-yellow text-brand-brown shadow-lg' : 'bg-white border-stone-100 text-stone-400 hover:border-brand-yellow/30'
             }`}
           >
-            <span className="text-xl mb-1">{cat.icon}</span>
-            <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-none">{cat.label}</span>
+            <span className="text-lg lg:text-xl mb-1">{cat.icon}</span>
+            <span className="text-[8px] lg:text-[9px] font-black uppercase tracking-tighter text-center leading-none">{cat.label}</span>
           </button>
         ))}
       </div>
 
       {/* Item Grid */}
-      <div className="flex-1 overflow-y-auto p-6 no-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 lg:p-6 no-scrollbar">
         <div className="max-w-5xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 lg:mb-8 gap-4">
              <div>
-                <h2 className="text-3xl font-black text-brand-brown tracking-tighter italic uppercase">Local <span className="text-brand-red">Favorites</span></h2>
-                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-1">Flavor Station: {branchName}</p>
+                <h2 className="text-2xl lg:text-3xl font-black text-brand-brown tracking-tighter italic uppercase leading-none">Local <span className="text-brand-red">Favorites</span></h2>
+                <p className="text-[8px] lg:text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-1">Flavor Station: {branchName}</p>
              </div>
-             <div className="flex gap-3">
+             <div className="flex gap-2 w-full sm:w-auto items-center">
+               {printerService.isSupported() && (
+                 <button 
+                  onClick={handleConnectPrinter}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${isPrinterConnected ? 'bg-mountain-green text-white' : 'bg-brand-stone text-brand-brown'}`}
+                 >
+                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M14.88 12L19 7.88 15.12 4h-1.41v6.29L10.41 7 9 8.41 12.59 12 9 15.59 10.41 17l3.29-3.29V20h1.41L19 16.12 14.88 12zM15.71 7l1.29 1.29L15.71 9.58V7zm0 10V14.42l1.29 1.29L15.71 17zM7 12c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2z"/></svg>
+                   {isPrinterConnected ? 'BT Ready' : 'Connect Printer'}
+                 </button>
+               )}
+
                {orderType === 'DINE_IN' && (
                  <button 
                   onClick={() => setIsTableModalOpen(true)}
-                  className="px-4 py-1.5 bg-brand-yellow text-brand-brown rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-transform"
+                  className="flex-1 sm:flex-none px-4 py-2 bg-brand-yellow text-brand-brown rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg"
                  >
                    {selectedTable ? `Table ${selectedTable.number}` : 'Select Table'}
                  </button>
                )}
-               <div className="px-4 py-1.5 bg-brand-brown/5 text-brand-brown rounded-full text-[10px] font-black uppercase tracking-widest">
-                 {filteredItems.length} Available
-               </div>
              </div>
           </div>
           <Menu menuItems={filteredItems} onSelectItem={setSelectedItem} />
@@ -157,7 +189,7 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
       </div>
 
       {/* Cart Sidebar */}
-      <div className="w-96 bg-brand-brown border-l border-brand-brown/10 flex flex-col shadow-2xl relative z-10">
+      <div className="hidden lg:flex w-96 bg-brand-brown border-l border-brand-brown/10 flex-col shadow-2xl relative z-10">
         <div className="p-4 border-b border-white/5 bg-brand-brown/90">
           <div className="flex bg-black/20 p-1 rounded-2xl mb-4">
             {(['DINE_IN', 'TAKEAWAY', 'DELIVERY'] as OrderType[]).map(type => (
@@ -200,36 +232,61 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
         </div>
       </div>
 
-      {/* Table Selection Modal */}
+      {/* Mobile Cart Overlay and Modal - Handled by Bill component logic */}
+      <button 
+        onClick={() => setIsMobileCartOpen(true)}
+        className={`lg:hidden fixed bottom-24 right-6 w-16 h-16 bg-brand-red rounded-full shadow-2xl flex items-center justify-center text-white z-40 transition-transform active:scale-95 ${order.length > 0 ? 'scale-100' : 'scale-0'}`}
+      >
+        <span className="absolute -top-1 -right-1 bg-brand-yellow text-brand-brown w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-brand-red">
+          {order.reduce((acc, i) => acc + i.quantity, 0)}
+        </span>
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+        </svg>
+      </button>
+
+      {isMobileCartOpen && (
+        <div className="lg:hidden fixed inset-0 bg-brand-brown z-50 flex flex-col animate-in slide-in-from-bottom duration-300">
+          <div className="p-6 border-b border-white/10 flex justify-between items-center">
+            <button onClick={() => setIsMobileCartOpen(false)} className="text-white/40">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div className="text-center">
+              <h3 className="text-xl font-black text-brand-yellow uppercase italic">Your <span className="text-white">Cart</span></h3>
+              <p className="text-[8px] font-bold text-white/30 uppercase tracking-[0.2em]">{orderType.replace('_', ' ')}</p>
+            </div>
+            <div className="w-8 h-8"></div>
+          </div>
+          
+          <div className="flex-1 overflow-hidden">
+            <Bill 
+              orderItems={order} 
+              onUpdateQuantity={handleUpdateQuantity} 
+              onClear={() => { setOrder([]); setSelectedTable(null); setCustomerPhone(''); setIsMobileCartOpen(false); }} 
+              onPreview={handleFinalize}
+              branchName={branchName}
+              onAddItem={handleAddItem}
+            />
+          </div>
+        </div>
+      )}
+
       {isTableModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-brand-cream rounded-[3rem] shadow-2xl w-full max-w-4xl p-10 overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h3 className="text-3xl font-black text-brand-brown italic uppercase">Seating <span className="text-brand-red">Plan</span></h3>
-                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-1">Assign Base Camp</p>
-              </div>
+          <div className="bg-brand-cream rounded-[2rem] lg:rounded-[3rem] shadow-2xl w-full max-w-4xl p-6 lg:p-10 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex justify-between items-center mb-6 lg:mb-8">
+              <h3 className="text-2xl lg:text-3xl font-black text-brand-brown italic uppercase">Seating <span className="text-brand-red">Plan</span></h3>
               <button onClick={() => setIsTableModalOpen(false)} className="text-brand-brown/40 hover:text-brand-brown transition-colors">
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l18 18" /></svg>
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6" /></svg>
               </button>
             </div>
-
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 overflow-y-auto pr-2 no-scrollbar">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 overflow-y-auto no-scrollbar">
               {TABLES.map(table => {
                 const dbTable = dbTables.find(dt => dt.id === table.id);
                 const status = dbTable?.status || 'AVAILABLE';
                 return (
-                  <button
-                    key={table.id}
-                    disabled={status !== 'AVAILABLE'}
-                    onClick={() => handleTableSelect({ ...table, status })}
-                    className={`aspect-square rounded-3xl p-4 flex flex-col items-center justify-center border-4 transition-all ${
-                      selectedTable?.id === table.id ? 'bg-brand-yellow border-brand-yellow text-brand-brown shadow-xl scale-105' :
-                      status === 'AVAILABLE' ? 'bg-white border-brand-stone text-brand-brown hover:border-brand-yellow/30' :
-                      'bg-stone-200 border-stone-300 text-stone-400 cursor-not-allowed grayscale'
-                    }`}
-                  >
-                    <span className="text-3xl font-black">{table.number}</span>
+                  <button key={table.id} disabled={status !== 'AVAILABLE'} onClick={() => handleTableSelect({ ...table, status })} className={`aspect-square rounded-2xl lg:rounded-3xl p-4 flex flex-col items-center justify-center border-4 transition-all ${selectedTable?.id === table.id ? 'bg-brand-yellow border-brand-yellow text-brand-brown' : status === 'AVAILABLE' ? 'bg-white border-brand-stone text-brand-brown' : 'bg-stone-200 border-stone-300 text-stone-400'}`}>
+                    <span className="text-2xl lg:text-3xl font-black">{table.number}</span>
                     <span className="text-[8px] font-bold uppercase tracking-widest mt-1">{status}</span>
                   </button>
                 );
@@ -253,6 +310,7 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
         orderType={orderType}
         tableId={selectedTable?.id}
         customerPhone={customerPhone}
+        isPrinterConnected={isPrinterConnected}
       />
     </div>
   );

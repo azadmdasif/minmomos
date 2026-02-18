@@ -1,6 +1,7 @@
 
 import { CompletedOrder, OrderItem, PaymentMethod, OrderType, OrderStatus, RawMaterial, User, Station, CentralMaterial, MaterialCategory, MenuItem, Size, StockAllocation } from '../types';
 import { supabase } from './supabase';
+import { RAW_MATERIALS_LIST } from '../constants';
 
 const AUTH_KEY = 'minmomos-auth-user';
 
@@ -215,7 +216,7 @@ export async function createCentralItem(
   manualId?: string
 ): Promise<void> {
   const id = manualId || name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-  const { error } = await supabase.from('central_inventory').insert({
+  const { error } = await supabase.from('central_inventory').upsert({
     id, name, unit, category, current_stock: initialQty, 
     last_purchase_cost: costPerUnit,
     last_purchase_date: new Date().toISOString(), is_finished: false
@@ -224,17 +225,12 @@ export async function createCentralItem(
 }
 
 export async function seedStandardInventory(): Promise<void> {
-  const items = [
-    { id: 'momo-chicken', name: 'Chicken Momo', unit: 'pcs', cat: 'MOMO' },
-    { id: 'momo-veg', name: 'Veg Momo', unit: 'pcs', cat: 'MOMO' },
-    { id: 'momo-paneer', name: 'Paneer Momo', unit: 'pcs', cat: 'MOMO' },
-    { id: 'pkt-oil', name: 'Refined Oil', unit: 'ltr', cat: 'PACKET' },
-    { id: 'pkt-fries', name: 'French Fries', unit: 'pkt', cat: 'PACKET' },
-  ];
-  for (const item of items) {
+  for (const item of RAW_MATERIALS_LIST) {
     try {
-      await createCentralItem(item.name, item.unit, 0, 0, item.cat as any, item.id);
-    } catch (e) {}
+      await createCentralItem(item.name, item.unit, 0, 0, item.category as any, item.id);
+    } catch (e) {
+      console.error(`Failed to seed material ${item.id}`, e);
+    }
   }
 }
 
