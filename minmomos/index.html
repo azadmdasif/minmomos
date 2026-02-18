@@ -32,60 +32,43 @@
     </script>
     <style>
       @media print {
-        @page { 
-          size: 58mm auto; 
-          margin: 0; 
+        @page {
+          size: 58mm auto;
+          margin: 0;
         }
-        
-        /* 1. Global Reset: Everything must be visible and static */
-        html, body, #root, main, div, section {
-          height: auto !important;
-          overflow: visible !important;
-          position: static !important;
+
+        body {
+          margin: 0;
           background: #fff !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          display: block !important;
-          box-shadow: none !important;
-          max-height: none !important;
         }
 
-        /* 2. Clear all UI clutter */
-        #root > *:not(main),
-        aside, nav, header, button, input, .no-print {
-          display: none !important;
-        }
-
-        /* 3. Hide everything by default using visibility */
         body * {
           visibility: hidden;
         }
 
-        /* 4. Target the receipt specifically and make it the star */
-        #printable-receipt, 
+        #printable-receipt,
         #printable-receipt * {
           visibility: visible !important;
+        }
+
+        #printable-receipt {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 58mm;
+          padding: 2mm;
+          background: #fff;
+          color: #000;
           display: block !important;
         }
-
-        /* 5. Force the receipt to the top-left of the page */
-        #printable-receipt {
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 58mm !important;
-          margin: 0 !important;
-          padding: 2mm !important;
-          background: white !important;
-          color: black !important;
-          z-index: 99999 !important;
-        }
-
-        /* 6. Special handling for modal wrappers to prevent them from clipping */
-        [role="dialog"], .fixed, .absolute {
-          background: transparent !important;
-          backdrop-filter: none !important;
+        
+        /* Ensure no parent containers hide the receipt */
+        .fixed, .absolute, [role="dialog"], #root, main {
           visibility: visible !important;
+          overflow: visible !important;
+          max-height: none !important;
+          height: auto !important;
+          display: block !important;
         }
       }
 
