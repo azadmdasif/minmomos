@@ -89,6 +89,7 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
     setIsPreviewing(false);
     setIsMobileCartOpen(false);
     setPendingBillNumber(null);
+    setIsSaving(false);
   };
 
   const handleConfirmOrder = async (method: PaymentMethod, useBluetooth: boolean = false) => {
@@ -120,26 +121,23 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
           });
           resetAfterOrder();
         } else if (!useBluetooth) {
-          // SYSTEM PRINT FIX:
-          // Register a one-time 'afterprint' listener to reset the state 
-          // only after the browser is finished with the print dialog.
-          const onAfterPrint = () => {
-            resetAfterOrder();
-            window.removeEventListener('afterprint', onAfterPrint);
-          };
-          window.addEventListener('afterprint', onAfterPrint);
-
-          // Trigger print while the receipt is still mounted in the modal
+          // SYSTEM PRINT: 
+          // 1. Force a small microtask gap to ensure Portal commit
+          await new Promise(r => setTimeout(r, 50));
+          
+          // 2. Trigger print
           window.print();
+          
+          // 3. Reset state immediately. window.print() is blocking, 
+          // so this runs only after the user closes the print dialog.
+          resetAfterOrder();
         } else {
-            // Case where BT print requested but printer not connected
             resetAfterOrder();
         }
       }
     } catch (err) {
       console.error(err);
       alert("An error occurred while finalizing the order.");
-    } finally {
       setIsSaving(false);
     }
   };
@@ -206,7 +204,7 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
       </div>
 
       {/* Cart Sidebar */}
-      <div className="hidden lg:flex w-96 bg-brand-brown border-l border-brand-brown/10 flex-col shadow-2xl relative z-10">
+      <div className="hidden lg:flex w-96 bg-brand-brown border-l border-brand-brown/10 flex-col shadow-2xl relative z-10 text-white">
         <div className="p-4 border-b border-white/5 bg-brand-brown/90">
           <div className="flex bg-black/20 p-1 rounded-2xl mb-4">
             {(['DINE_IN', 'TAKEAWAY', 'DELIVERY'] as OrderType[]).map(type => (
@@ -264,7 +262,7 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
 
       {isMobileCartOpen && (
         <div className="lg:hidden fixed inset-0 bg-brand-brown z-50 flex flex-col animate-in slide-in-from-bottom duration-300">
-          <div className="p-6 border-b border-white/10 flex justify-between items-center">
+          <div className="p-6 border-b border-white/10 flex justify-between items-center text-white">
             <button onClick={() => setIsMobileCartOpen(false)} className="text-white/40">
               <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
