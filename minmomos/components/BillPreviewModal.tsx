@@ -56,10 +56,8 @@ const BillPreviewModal: React.FC<BillPreviewModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-brand-brown/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+      className="fixed inset-0 bg-brand-brown/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 print:hidden"
       onClick={onClose}
-      role="dialog"
-      aria-modal="true"
     >
       <div 
         className="bg-brand-cream rounded-[3rem] shadow-2xl w-full max-w-md text-brand-brown overflow-hidden flex flex-col max-h-[90vh]"

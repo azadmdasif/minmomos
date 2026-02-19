@@ -20,7 +20,7 @@
               'brand-cream': '#FDFBF5',
               'brand-red': '#D95323',
               'brand-stone': '#E7E5E4',
-              'mountain-green': '#064E3B',
+              'mountain-green': '#064E3B', // Kept for some accents
               'peak-amber': '#D97706',
             },
             fontFamily: {
@@ -32,46 +32,11 @@
     </script>
     <style>
       @media print {
-        @page {
-          size: 58mm auto;
-          margin: 0;
-        }
-
-        body {
-          margin: 0;
-          background: #fff !important;
-        }
-
-        body * {
-          visibility: hidden;
-        }
-
-        #printable-receipt,
-        #printable-receipt * {
-          visibility: visible !important;
-        }
-
-       #printable-receipt {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 58mm;
-    padding: 2mm;
-    background: #fff;
-    color: #000;
-  }
-}
-        
-        /* Ensure no parent containers hide the receipt */
-        .fixed, .absolute, [role="dialog"], #root, main {
-          visibility: visible !important;
-          overflow: visible !important;
-          max-height: none !important;
-          height: auto !important;
-          display: block !important;
-        }
+        @page { size: 58mm auto; margin: 0; }
+        body * { visibility: hidden; }
+        #printable-receipt, #printable-receipt * { visibility: visible; }
+        #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; }
       }
-
       .no-scrollbar::-webkit-scrollbar { display: none; }
       body { background-color: #FDFBF5; color: #4A2C2A; }
     </style>
@@ -88,7 +53,8 @@
       }
     }
     </script>
-  </head>
+  <link rel="stylesheet" href="/index.css">
+</head>
   <body class="font-sans overflow-hidden">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
