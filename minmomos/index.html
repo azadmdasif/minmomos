@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -20,7 +19,7 @@
               'brand-cream': '#FDFBF5',
               'brand-red': '#D95323',
               'brand-stone': '#E7E5E4',
-              'mountain-green': '#064E3B', // Kept for some accents
+              'mountain-green': '#064E3B',
               'peak-amber': '#D97706',
             },
             fontFamily: {
@@ -32,11 +31,37 @@
     </script>
     <style>
       @media print {
-        @page { size: 58mm auto; margin: 0; }
-        body * { visibility: hidden; }
-        #printable-receipt, #printable-receipt * { visibility: visible; }
-        #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; }
+        @page {
+          size: 58mm auto;
+          margin: 0;
+        }
+
+        body {
+          margin: 0;
+        }
+
+        body * {
+          visibility: hidden;
+        }
+
+        #printable-receipt,
+        #printable-receipt * {
+          visibility: visible;
+        }
+
+        /* ✅ Minimal Fix Added Here */
+        #printable-receipt {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 58mm;
+          padding: 2mm;
+          background: #fff;
+          color: #000;
+          visibility: visible !important;
+        }
       }
+
       .no-scrollbar::-webkit-scrollbar { display: none; }
       body { background-color: #FDFBF5; color: #4A2C2A; }
     </style>
@@ -53,8 +78,7 @@
       }
     }
     </script>
-  <link rel="stylesheet" href="/index.css">
-</head>
+  </head>
   <body class="font-sans overflow-hidden">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
