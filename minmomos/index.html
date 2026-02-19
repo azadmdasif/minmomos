@@ -20,7 +20,7 @@
               'brand-cream': '#FDFBF5',
               'brand-red': '#D95323',
               'brand-stone': '#E7E5E4',
-              'mountain-green': '#064E3B', // Kept for some accents
+              'mountain-green': '#064E3B',
               'peak-amber': '#D97706',
             },
             fontFamily: {
@@ -32,11 +32,48 @@
     </script>
     <style>
       @media print {
-        @page { size: 58mm auto; margin: 0; }
-        body * { visibility: hidden; }
-        #printable-receipt, #printable-receipt * { visibility: visible; }
-        #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; }
+        @page {
+          size: 58mm auto;
+          margin: 0;
+        }
+
+        /* 1. Neutralize the modal and its ancestors to ensure the receipt can render */
+        /* This removes 'fixed' positioning and 'backdrop-blur' side effects */
+        html, body, #root, main, [role="dialog"], .fixed, .absolute {
+          position: static !important;
+          display: block !important;
+          background: #fff !important;
+          backdrop-filter: none !important;
+          overflow: visible !important;
+          height: auto !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-shadow: none !important;
+        }
+
+        /* 2. Surgical Hiding: Remove non-printable app shell components from the flow */
+        /* We target siblings of the receipt's path to avoid inheritance breaks */
+        aside, nav, header, button, input, .no-print, 
+        .lg\:flex, .lg\:hidden, .flex-1.overflow-y-auto, .max-w-5xl {
+          display: none !important;
+        }
+
+        /* 3. Explicitly position and style the receipt for the 58mm thermal layout */
+        #printable-receipt {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 58mm !important;
+          display: block !important;
+          margin: 0 !important;
+          padding: 2mm !important;
+          background: #fff !important;
+          color: #000 !important;
+          z-index: 99999 !important;
+        }
       }
+
       .no-scrollbar::-webkit-scrollbar { display: none; }
       body { background-color: #FDFBF5; color: #4A2C2A; }
     </style>
@@ -53,8 +90,7 @@
       }
     }
     </script>
-  <link rel="stylesheet" href="/index.css">
-</head>
+  </head>
   <body class="font-sans overflow-hidden">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
