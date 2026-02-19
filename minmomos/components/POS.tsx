@@ -82,6 +82,15 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
     setIsPreviewing(true);
   };
 
+  const resetAfterOrder = () => {
+    setOrder([]);
+    setSelectedTable(null);
+    setCustomerPhone('');
+    setIsPreviewing(false);
+    setIsMobileCartOpen(false);
+    setPendingBillNumber(null);
+  };
+
   const handleConfirmOrder = async (method: PaymentMethod, useBluetooth: boolean = false) => {
     if (isSaving) return;
     setIsSaving(true);
@@ -109,15 +118,23 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
             branchName,
             orderType
           });
+          resetAfterOrder();
         } else if (!useBluetooth) {
-          setTimeout(() => window.print(), 100);
-        }
+          // SYSTEM PRINT FIX:
+          // Register a one-time 'afterprint' listener to reset the state 
+          // only after the browser is finished with the print dialog.
+          const onAfterPrint = () => {
+            resetAfterOrder();
+            window.removeEventListener('afterprint', onAfterPrint);
+          };
+          window.addEventListener('afterprint', onAfterPrint);
 
-        setOrder([]);
-        setSelectedTable(null);
-        setCustomerPhone('');
-        setIsPreviewing(false);
-        setIsMobileCartOpen(false);
+          // Trigger print while the receipt is still mounted in the modal
+          window.print();
+        } else {
+            // Case where BT print requested but printer not connected
+            resetAfterOrder();
+        }
       }
     } catch (err) {
       console.error(err);
@@ -232,7 +249,7 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
         </div>
       </div>
 
-      {/* Mobile Cart Overlay and Modal - Handled by Bill component logic */}
+      {/* Mobile Cart Overlay */}
       <button 
         onClick={() => setIsMobileCartOpen(true)}
         className={`lg:hidden fixed bottom-24 right-6 w-16 h-16 bg-brand-red rounded-full shadow-2xl flex items-center justify-center text-white z-40 transition-transform active:scale-95 ${order.length > 0 ? 'scale-100' : 'scale-0'}`}
