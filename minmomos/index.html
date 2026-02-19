@@ -20,7 +20,7 @@
               'brand-cream': '#FDFBF5',
               'brand-red': '#D95323',
               'brand-stone': '#E7E5E4',
-              'mountain-green': '#064E3B', // Kept for some accents
+              'mountain-green': '#064E3B',
               'peak-amber': '#D97706',
             },
             fontFamily: {
@@ -31,32 +31,64 @@
       }
     </script>
     <style>
-      @media print {
-        @page { size: 58mm auto; margin: 0; }
-        body * { visibility: hidden; }
-        #printable-receipt, #printable-receipt * { visibility: visible; }
-        #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; }
+      /* Screen Styles for the print container */
+      #print-root {
+        display: none;
       }
+
+      @media print {
+        @page {
+          size: 58mm auto;
+          margin: 0;
+        }
+
+        /* Hide the entire application tree to avoid modal/layout interference */
+        #root {
+          display: none !important;
+        }
+
+        /* Show only the isolated print container */
+        #print-root {
+          display: block !important;
+          width: 58mm !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          background: #fff !important;
+          color: #000 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+          background: #fff !important;
+        }
+      }
+
       .no-scrollbar::-webkit-scrollbar { display: none; }
       body { background-color: #FDFBF5; color: #4A2C2A; }
     </style>
     <script type="importmap">
-    {
-      "imports": {
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "vite": "https://aistudiocdn.com/vite@^7.1.12",
-        "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0",
-        "vite-plugin-pwa": "https://aistudiocdn.com/vite-plugin-pwa@^1.1.0",
-        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.94.0"
-      }
-    }
-    </script>
-  <link rel="stylesheet" href="/index.css">
-</head>
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "vite": "https://aistudiocdn.com/vite@^7.1.12",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0",
+    "vite-plugin-pwa": "https://aistudiocdn.com/vite-plugin-pwa@^1.1.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.94.0",
+    "react-dom": "https://esm.sh/react-dom@^19.2.4"
+  }
+}
+</script>
+  </head>
   <body class="font-sans overflow-hidden">
     <div id="root"></div>
+    <!-- Dedicated container for system printing, isolated from the React app layout -->
+    <div id="print-root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
