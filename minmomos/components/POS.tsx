@@ -101,25 +101,31 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
       );
       
       if (savedNum) {
-        if (useBluetooth && printerService.isConnected()) {
-          await printerService.printReceipt({
+    if (useBluetooth && printerService.isConnected()) {
+        await printerService.printReceipt({
             orderItems: order,
             billNumber: savedNum,
             paymentMethod: method,
             branchName,
             orderType
-          });
-        } else if (!useBluetooth) {
-          setTimeout(() => window.print(), 100);
-        }
+        });
+    } else if (!useBluetooth) {
 
-        setOrder([]);
-        setSelectedTable(null);
-        setCustomerPhone('');
-        setIsPreviewing(false);
-        setIsMobileCartOpen(false);
-      }
-    } catch (err) {
+        const handleAfterPrint = () => {
+            setOrder([]);
+            setSelectedTable(null);
+            setCustomerPhone('');
+            setIsPreviewing(false);
+            setIsMobileCartOpen(false);
+            window.removeEventListener('afterprint', handleAfterPrint);
+        };
+
+        window.addEventListener('afterprint', handleAfterPrint);
+        window.print();
+        return;
+    }
+}
+ catch (err) {
       console.error(err);
       alert("An error occurred while finalizing the order.");
     } finally {
