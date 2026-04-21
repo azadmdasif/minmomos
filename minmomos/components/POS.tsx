@@ -47,7 +47,23 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
       if (t) setDbTables(t);
     };
     loadData();
+
+    // Initial printer state
     setIsPrinterConnected(printerService.isConnected());
+
+    // Listen for disconnections
+    printerService.setDisconnectCallback(() => {
+      setIsPrinterConnected(false);
+    });
+  }, []);
+
+  // Separate effect for table updates if needed, but let's keep it simple
+  useEffect(() => {
+    if (isTableModalOpen) {
+      supabase.from('dining_tables').select('*').then(({ data }) => {
+        if (data) setDbTables(data);
+      });
+    }
   }, [isTableModalOpen]);
 
   const handleConnectPrinter = async () => {
@@ -98,7 +114,6 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
     
     try {
       const total = order.reduce((acc, i) => acc + i.price * i.quantity, 0);
-      const nextBillNum = pendingBillNumber || await peekNextBillNumber();
       
       const savedNum = await saveOrder(
         order, 
@@ -112,14 +127,21 @@ const POS: React.FC<{ branchName: string }> = ({ branchName }) => {
       
       if (savedNum) {
         if (useBluetooth && printerService.isConnected()) {
-          await printerService.printReceipt({
+          const success = await printerService.printReceipt({
             orderItems: order,
             billNumber: savedNum,
             paymentMethod: method,
             branchName,
             orderType
           });
-          resetAfterOrder();
+          
+          if (success) {
+            resetAfterOrder();
+          } else {
+            alert("Bluetooth printing failed. Please check your printer and try again.");
+            setIsSaving(false);
+            return;
+          }
         } else if (!useBluetooth) {
           // SYSTEM PRINT: 
           // 1. Force a small microtask gap to ensure Portal commit

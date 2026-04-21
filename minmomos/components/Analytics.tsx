@@ -5,6 +5,7 @@ import { CompletedOrder, PaymentMethod, Station, User, CentralMaterial } from '.
 import PrintReceipt from './PrintReceipt';
 import DeleteBillModal from './DeleteBillModal';
 import ItemSalesReport from './ItemSalesReport';
+import PerformanceChart from './PerformanceChart';
 
 const getTodaysDateString = () => new Date().toISOString().split('T')[0];
 const getDateString = (date: Date) => date.toISOString().split('T')[0];
@@ -13,9 +14,9 @@ interface AnalyticsProps {
   user: User;
 }
 
-type DatePreset = 'today' | 'yesterday' | 'last7' | 'last30' | 'custom';
+type DatePreset = 'today' | 'yesterday' | 'last7' | 'last14' | 'last30' | 'lastMonth' | 'custom';
 type ActiveTab = 'active' | 'deleted';
-type ReportView = 'revenue' | 'itemSales' | 'comparison' | 'profitability';
+type ReportView = 'revenue' | 'trends' | 'itemSales' | 'comparison' | 'profitability';
 
 const Analytics: React.FC<AnalyticsProps> = ({ user }) => {
   const isAdmin = user.role === 'ADMIN';
@@ -114,11 +115,21 @@ const Analytics: React.FC<AnalyticsProps> = ({ user }) => {
         start = weekAgo;
         end = today;
         break;
+      case 'last14':
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(today.getDate() - 13);
+        start = twoWeeksAgo;
+        end = today;
+        break;
       case 'last30':
         const monthAgo = new Date();
         monthAgo.setDate(today.getDate() - 29);
         start = monthAgo;
         end = today;
+        break;
+      case 'lastMonth':
+        start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        end = new Date(today.getFullYear(), today.getMonth(), 0);
         break;
     }
     setStartDate(getDateString(start));
@@ -221,6 +232,13 @@ const Analytics: React.FC<AnalyticsProps> = ({ user }) => {
     return Object.entries(stores).map(([name, stats]) => ({ name, ...stats })).sort((a, b) => b.revenue - a.revenue);
   }, [isAdmin, allOrdersRaw]);
 
+  const displayDays = useMemo(() => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  }, [startDate, endDate]);
+
   const SummaryCard = ({ title, value, sub, color, textWhite }: any) => (
     <div className={`${color} p-6 lg:p-8 rounded-[2rem] lg:rounded-[3rem] shadow-sm relative overflow-hidden group border border-black/5`}>
       <p className={`text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] mb-2 ${textWhite ? 'text-white/60' : 'text-brand-brown/40'}`}>{title}</p>
@@ -252,7 +270,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ user }) => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 bg-white/50 p-2 rounded-2xl lg:rounded-3xl border border-brand-stone">
-              {(['today', 'yesterday', 'last7', 'last30', 'custom'] as DatePreset[]).map(p => (
+              {(['today', 'yesterday', 'last7', 'last14', 'last30', 'lastMonth', 'custom'] as DatePreset[]).map(p => (
                 <button key={p} onClick={() => handlePresetChange(p)} className={`px-3 lg:px-4 py-2 text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activePreset === p ? 'bg-brand-brown text-brand-yellow shadow-lg' : 'text-brand-brown/40 hover:bg-brand-brown/10'}`}>{p}</button>
               ))}
               {activePreset === 'custom' && (
@@ -335,6 +353,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ user }) => {
         
         <div className="flex flex-wrap rounded-2xl lg:rounded-[2rem] overflow-hidden border-2 lg:border-4 border-brand-brown shadow-xl mb-10">
           <button onClick={() => setReportView('revenue')} className={`flex-1 min-w-[50%] lg:min-w-0 py-3 lg:py-4 text-[10px] font-black uppercase tracking-widest transition-all ${reportView === 'revenue' ? 'bg-brand-brown text-brand-yellow' : 'bg-white text-brand-brown/40 hover:bg-brand-brown/5'}`}>Revenue</button>
+          <button onClick={() => setReportView('trends')} className={`flex-1 min-w-[50%] lg:min-w-0 py-3 lg:py-4 text-[10px] font-black uppercase tracking-widest transition-all ${reportView === 'trends' ? 'bg-brand-brown text-brand-yellow' : 'bg-white text-brand-brown/40 hover:bg-brand-brown/5'}`}>Trends</button>
           <button onClick={() => setReportView('itemSales')} className={`flex-1 min-w-[50%] lg:min-w-0 py-3 lg:py-4 text-[10px] font-black uppercase tracking-widest transition-all ${reportView === 'itemSales' ? 'bg-brand-brown text-brand-yellow' : 'bg-white text-brand-brown/40 hover:bg-brand-brown/5'}`}>Items</button>
           {isAdmin && (
             <>
@@ -371,6 +390,12 @@ const Analytics: React.FC<AnalyticsProps> = ({ user }) => {
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+        {reportView === 'trends' && (
+          <div className="animate-in fade-in duration-500">
+            <PerformanceChart orders={orders} days={displayDays} />
           </div>
         )}
 

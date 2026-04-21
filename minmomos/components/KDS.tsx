@@ -95,7 +95,7 @@ const KDS: React.FC = () => {
               
               <div className="flex-1 p-6 space-y-4 overflow-y-auto no-scrollbar bg-white">
                 {/* Render ALL items in the order, sorted to put Momos first and sides/addons second */}
-                {[...(order.order_items || [])].sort((a,b) => a.name.includes('Momo') ? -1 : 1).map((item: any) => {
+                {[...(order.order_items || [])].sort((a) => a.name.includes('Momo') ? -1 : 1).map((item: any) => {
                   const isSide = item.name.toLowerCase().includes('fries') || item.name.toLowerCase().includes('mayo');
                   return (
                     <div key={item.id} className={`flex justify-between items-start pb-3 border-b border-stone-50 last:border-0 ${isSide ? 'bg-brand-brown/5 rounded-xl p-3' : ''}`}>
