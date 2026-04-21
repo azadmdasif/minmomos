@@ -6,7 +6,7 @@ import { updateTableStatus } from '../utils/storage';
 import { DiningTable } from '../types';
 
 const TableMap: React.FC = () => {
-  const [tables, setTables] = useState<DiningTable[]>(TABLES);
+  const [tables] = useState<DiningTable[]>(TABLES);
   const [selectedTable, setSelectedTable] = useState<DiningTable | null>(null);
   const [dbTables, setDbTables] = useState<any[]>([]);
   const pollIntervalRef = useRef<number | null>(null);

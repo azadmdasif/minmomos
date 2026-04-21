@@ -18,10 +18,10 @@ const MenuManager: React.FC = () => {
   const [centralStock, setCentralStock] = useState<CentralMaterial[]>([]);
   const [editingItem, setEditingItem] = useState<Partial<MenuItem> | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isTableMissing, setIsTableMissing] = useState(false);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     loadItems();
@@ -241,6 +241,7 @@ const MenuManager: React.FC = () => {
         <div>
           <h2 className="text-5xl font-black text-brand-brown tracking-tighter italic uppercase">MENU <span className="text-brand-yellow">CONTROL</span></h2>
           <p className="text-[10px] font-bold text-brand-brown/40 uppercase tracking-[0.4em] mt-2">Recipe & Pricing Authority</p>
+          {error && <p className="text-brand-red text-[10px] font-bold uppercase mt-2">{error}</p>}
         </div>
         <div className="flex gap-4">
           <button onClick={handleSeedMenu} disabled={isSeeding} className="bg-emerald-600 text-white px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl hover:scale-105 transition-transform active:scale-95 disabled:opacity-50">
@@ -267,8 +268,16 @@ const MenuManager: React.FC = () => {
             </div>
             <div className="flex gap-2 mt-auto">
               <button onClick={() => { setEditingItem(item); setIsModalOpen(true); }} className="flex-1 py-4 bg-brand-brown text-brand-yellow rounded-2xl text-[10px] font-black uppercase tracking-widest">Edit</button>
-              <button onClick={() => handleDelete(item.id)} className="px-5 py-4 rounded-2xl bg-red-50 text-brand-red hover:bg-brand-red hover:text-white transition-all">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              <button 
+                onClick={() => handleDelete(item.id)} 
+                disabled={isDeleting === item.id}
+                className="px-5 py-4 rounded-2xl bg-red-50 text-brand-red hover:bg-brand-red hover:text-white transition-all disabled:opacity-50"
+              >
+                {isDeleting === item.id ? (
+                  <div className="w-4 h-4 border-2 border-brand-red border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                )}
               </button>
             </div>
           </div>

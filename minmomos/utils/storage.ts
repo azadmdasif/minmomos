@@ -254,7 +254,7 @@ export async function recordCentralPurchase(id: string, qty: number, totalCost: 
   if (updateError) throw updateError;
 }
 
-export async function allocateStock(materialId: string, stationId: string, stationName: string, qty: number): Promise<void> {
+export async function allocateStock(materialId: string, stationName: string, qty: number): Promise<void> {
   const { data: central, error: cError } = await supabase.from('central_inventory').select('*').eq('id', materialId).single();
   if (cError || !central) throw new Error("Central Item not found.");
   if (central.current_stock < qty) throw new Error("Insufficient central stock");

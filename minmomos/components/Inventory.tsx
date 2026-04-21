@@ -213,7 +213,7 @@ const Inventory: React.FC<InventoryProps> = ({ user }) => {
   const handleAllocation = async () => {
     if (selectedItem?.id && selectedStation && qty) {
       try {
-        await allocateStock(selectedItem.id, selectedStation.id, selectedStation.name, parseFloat(qty));
+        await allocateStock(selectedItem.id, selectedStation.name, parseFloat(qty));
         setIsAllocateModalOpen(false);
         resetForm();
         await fetchData();

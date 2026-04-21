@@ -20,11 +20,17 @@ const VariantSelectionModal: React.FC<VariantSelectionModalProps> = ({ item, onC
     const sizes: Size[] = [];
 
     for (const prep in item.preparations) {
-      if (item.preparations[prep as PreparationType]!.small !== -1) {
-        preps.push(prep as PreparationType);
-        for (const size in item.preparations[prep as PreparationType]) {
-          sizes.push(size as Size);
-          prices.add(item.preparations[prep as PreparationType]![size as Size]);
+      const prepKey = prep as PreparationType;
+      const prepDetails = item.preparations[prepKey];
+      if (prepDetails) {
+        preps.push(prepKey);
+        for (const size in prepDetails) {
+          const sizeKey = size as Size;
+          const price = prepDetails[sizeKey];
+          if (price !== undefined && price !== -1) {
+            sizes.push(sizeKey);
+            prices.add(price);
+          }
         }
       }
     }
